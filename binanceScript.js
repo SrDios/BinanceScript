@@ -16,7 +16,7 @@
     /* Ejemplo: {'name':'BNB', 'price':0.0009495} */
     /* Además, deberás tener un valor visible de BTC/USDT en pantalla si quieres usar la calculadora, ya sea añadiendo la moneda a favoritos y teniendo este tab seleccionado, o seleccionando un tab que la contenga (los de la parte de arriba a la derecha).
     /*********************************************/
-    var coinPrices = [{'name':'XVG', 'price':0.00000400},{'name':'BNB', 'price':0.0009495},{'name':'IOTA', 'price':0.00029700},{'name':'MANA', 'price':0.00000362},{'name':'TRX', 'price':0.00000330}];
+    var coinPrices = [{'name':'XVG', 'price':0.00000830},{'name':'BNB', 'price':0.0009495},{'name':'IOTA', 'price':0.00029700},{'name':'MANA', 'price':0.00000362},{'name':'TRX', 'price':0.00000330}];
     //Cambia este valor si quieres que se refresque cada mas o menos tiempo. Tiempo actual, 3000 milisegundos (3 segundos).
     var refreshTime = 3000;
     //Cambia este valor para actualizar el valor de 'Vender a:' al porcentaje que quieras.
@@ -28,6 +28,14 @@
             init();
             clearInterval(loadChecker);
 
+            $('body').keyup(function (e) {
+                if(e.keyCode === 67){
+                    if(!$('#calc').is(':visible'))
+                       $('#calc').attr('style', 'display:block;  float: right;color: #ffd800;position: absolute; right: 0;top: 0; text-align: center;background-color: #909090;width: 250px;border: 1px dotted yellow;height: 75px;vertical-align: middle;margin-left: 44%;font-weight: bold;');
+                    else
+                        $('#calc').attr('style', 'display:none');
+                }
+            });
 
             /**Calculadora**/
             $('#satoshis').keyup(function (e) {
@@ -72,7 +80,7 @@
 
         var calculator="<span><input id='satoshis' class='satoshis' type='text' width='100' /><br/><span class='dollars'> </span></span>";
         var bitcoinValue = $($("li:contains('BTC/USDT')").parent()).find('li')[2];
-        $('body').append('<div style="float: right;color: #ffd800;position: absolute; right: 0;top: 0; text-align: center;background-color: #909090;width: 250px;border: 1px dotted yellow;height: 75px;vertical-align: middle;margin-left: 44%;font-weight: bold;">'+ calculator +'</div>');
+        $('body').append('<div id="calc" style="display:none; float: right;color: #ffd800;position: absolute; right: 0;top: 0; text-align: center;background-color: #909090;width: 250px;border: 1px dotted yellow;height: 75px;vertical-align: middle;margin-left: 44%;font-weight: bold;">'+ calculator +'</div>');
 
     };
 

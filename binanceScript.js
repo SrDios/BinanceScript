@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Binance Helper Power Max 2000
 // @namespace    http://tampermonkey.net/
-// @version      0.3
+// @version      0.4
 // @description  Just a little helper for binance.
 // @author       Wiedzmin (Mediavida)
 // @match        https://www.binance.com/trade.html?symbol=*

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Binance Helper Power Max 2000
 // @namespace    http://tampermonkey.net/
-// @version      0.4
+// @version      0.5
 // @description  Just a little helper for binance.
 // @author       Wiedzmin (Mediavida)
 // @match        https://www.binance.com/trade.html?symbol=*
@@ -25,16 +25,38 @@
     var bitcoinValue = 0;
     var loadChecker = setInterval(function(){
         if(!$('#pageLoading').is(":visible")){
+            (function() {
+                var cors_api_host = 'cors-anywhere.herokuapp.com';
+                var cors_api_url = 'https://' + cors_api_host + '/';
+                var slice = [].slice;
+                var origin = window.location.protocol + '//' + window.location.host;
+                var open = XMLHttpRequest.prototype.open;
+                XMLHttpRequest.prototype.open = function() {
+                    var args = slice.call(arguments);
+                    var targetOrigin = /^https?:\/\/([^\/]+)/i.exec(args[1]);
+                    if (targetOrigin && targetOrigin[0].toLowerCase() !== origin &&
+                        targetOrigin[1] !== cors_api_host) {
+                        args[1] = cors_api_url + args[1];
+                    }
+                    return open.apply(this, args);
+                };
+            })();
             init();
             clearInterval(loadChecker);
 
             $('body').keyup(function (e) {
                 if(e.keyCode === 67){
                     if(!$('#calc').is(':visible'))
-                       $('#calc').attr('style', 'display:block;  float: right;color: #ffd800;position: absolute; right: 0;top: 0; text-align: center;background-color: #909090;width: 250px;border: 1px dotted yellow;height: 75px;vertical-align: middle;margin-left: 44%;font-weight: bold;');
+                        $('#calc').attr('style', 'display:block;  float: right;color: #ffd800;position: absolute; right: 0;top: 0; text-align: center;background-color: #909090;width: 250px;border: 1px dotted yellow;height: 75px;vertical-align: middle;margin-left: 44%;font-weight: bold;');
                     else
                         $('#calc').attr('style', 'display:none');
                 }
+
+                if(e.keyCode === 78)
+                    if(!$('#news').is(':visible'))
+                        $('#news').attr('style', 'float: left;color: #ffd800;position: absolute; left: 0;top: 0; text-align: left;background-color: #909090;width: 250px;border: 1px dotted yellow;height: auto;margin-top:10%; vertical-align: middle;margin-left: 0%;font-weight: bold;');
+                    else
+                        $('#news').attr('style', 'display:none');
             });
 
             /**Calculadora**/
@@ -76,14 +98,38 @@
 
             //Esto actualizará el valor del bitcoin en la calculadora.
             calculate();
+
+            var splitted = $('.productSymbol').text().split('/');
+            //$('.productSymbol').find('a').remove();
+            if( $('.productSymbol').find('a').length == 0)
+                $('.productSymbol').wrapInner('<a target="_blank" href="https://www.google.es/search?q='+ splitted[0] + '%20coin" />');
+            else
+                $('.productSymbol').find('a').attr('href', 'https://www.google.es/search?q='+ splitted[0] + '%20coin' );
+
         }, refreshTime);
 
         var calculator="<span><input id='satoshis' class='satoshis' type='text' width='100' /><br/><span class='dollars'> </span></span>";
         var bitcoinValue = $($("li:contains('BTC/USDT')").parent()).find('li')[2];
         $('body').append('<div id="calc" style="display:none; float: right;color: #ffd800;position: absolute; right: 0;top: 0; text-align: center;background-color: #909090;width: 250px;border: 1px dotted yellow;height: 75px;vertical-align: middle;margin-left: 44%;font-weight: bold;">'+ calculator +'</div>');
 
-    };
 
+        $.get(
+            'https://support.binance.com/hc/en-us/sections/115000106672-New-Listings', function() {
+                alert( "success" );
+            })
+            .done(function() {
+            alert( "second success" );
+        })
+            .fail(function(response) {
+            var newCoins = $(response.responseText).find('.article-list').text();
+            $('body').append('<div id="news" style="float: left;color: #ffd800;position: absolute; left: 0;top: 0; text-align: left;background-color: #909090;width: 250px;border: 1px dotted yellow;height: auto;margin-top:10%; vertical-align: middle;margin-left: 0%;font-weight: bold;">'+ newCoins +'</div>');
+
+
+
+        });
+
+
+    };
 
     /**Helpers**/
     function percent(price) {

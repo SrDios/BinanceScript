@@ -4,6 +4,7 @@
 // @version      0.5
 // @description  Just a little helper for binance.
 // @author       Wiedzmin (Mediavida)
+// @author       fmunozn
 // @match        https://www.binance.com/trade.html?symbol=*
 // @grant        none
 // ==/UserScript==
@@ -11,14 +12,47 @@
 (function() {
     'use strict';
 
+    var latestNotificationTime = 0;
+    var notificationPeriod = 30000;
+
+    function notifyMe(notification) {
+        // Let's check if the browser supports notifications
+        if (!("Notification" in window)) {
+            alert("This browser does not support system notifications");
+        }
+
+        // Let's check whether notification permissions have already been granted
+        else if (Notification.permission === "granted") {
+            // If it's okay let's create a notification
+            new Notification(notification);
+            latestNotificationTime = new Date().getTime();
+        }
+
+        // Otherwise, we need to ask the user for permission
+        else if (Notification.permission !== 'denied') {
+            Notification.requestPermission(function (permission) {
+                // If the user accepts, let's create a notification
+                if (permission === "granted") {
+                    var notification = new Notification("Hi there!");
+                    latestNotificationTime = new Date().getTime();
+                }
+            });
+        }
+
+        // Finally, if the user has denied notifications and you
+        // want to be respectful there is no need to bother them any more.
+    }
+
     /********************************************************COIN VALUES************************************************/
     /* Coloca en la variable coinPrices siguiendo el formato (y separado por comas) las monedas que tienes y a que precio fueron compradas.*/
     /* Ejemplo: {'name':'BNB', 'price':0.0009495} */
     /* Además, deberás tener un valor visible de BTC/USDT en pantalla si quieres usar la calculadora, ya sea añadiendo la moneda a favoritos y teniendo este tab seleccionado, o seleccionando un tab que la contenga (los de la parte de arriba a la derecha).
     /*********************************************/
-    var coinPrices = [{'name':'XVG', 'price':0.00000830},{'name':'BNB', 'price':0.0009495},{'name':'IOTA', 'price':0.00029700},{'name':'MANA', 'price':0.00000362},{'name':'TRX', 'price':0.00000330}];
+    var coinPrices = [{'name':'LTC', 'price':0.016020},{'name':'BNB', 'price':0.00063196},{'name':'IOTA', 'price':0.00027079},{'name':'XLM', 'price':0.00005601},{'name':'TRX', 'price':0.00000330}];
     //Cambia este valor si quieres que se refresque cada mas o menos tiempo. Tiempo actual, 3000 milisegundos (3 segundos).
     var refreshTime = 3000;
+    var lossAlert = -10;
+    var winAlert = 10;
     //Cambia este valor para actualizar el valor de 'Vender a:' al porcentaje que quieras.
     var sellTo = 10;
     /***************/
@@ -79,12 +113,15 @@
             var infoSell = "Vender a +"+sellTo+"% : ";
             var infoGanancia = "Ganancia: ";
             var break_ = false;
+            var gananciaFloat = 0;
+
             $(coinPrices).each(function( i ) {
                 if($('.productSymbol').text().includes(coinPrices[i].name)) {
                     infoBuy += coinPrices[i].price;
                     name = coinPrices[i].name;
                     infoSell += coinPrices[i].price + percent(coinPrices[i].price);
-                    infoGanancia += (((currentPrice*100)/coinPrices[i].price) -100).toFixed(2);
+                    gananciaFloat = (((currentPrice*100)/coinPrices[i].price) -100).toFixed(2);
+                    infoGanancia += gananciaFloat;
                     break_ = true;
                 }
                 if(break_)
@@ -95,6 +132,17 @@
             var span2="<span>"+infoSell+"</span>";
             var span3="<span>"+infoGanancia+"%</span>";
             $('#mainDiv').html(spanName+span1+"<br/>"+span2+"<br/>"+span3);
+
+            //notifyMe("It might be a good moment to sell: "+name+" Current profit: "+gananciaFloat);
+            var currentTime = new Date().getTime();
+
+            if(currentTime-notificationPeriod > latestNotificationTime){
+                if(gananciaFloat > winAlert){
+                    notifyMe("Sell Currency "+name+" Current profit: "+gananciaFloat+"%");
+                }else if(gananciaFloat < lossAlert){
+                    notifyMe("Alarm!! Currency "+name+" Is losing too much: "+gananciaFloat+"%");
+                }
+            }
 
             //Esto actualizará el valor del bitcoin en la calculadora.
             calculate();
@@ -127,7 +175,6 @@
 
 
         });
-
 
     };
 

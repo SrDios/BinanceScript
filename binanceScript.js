@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Binance Helper Power Max 2000
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.6
 // @description  Just a little helper for binance.
 // @author       Wiedzmin (Mediavida)
 // @author       fmunozn
@@ -13,27 +13,21 @@
     'use strict';
 
     var latestNotificationTime = 0;
-    var notificationPeriod = 30000;
+    var notificationPeriod = 60000; //Cada cuantos milisegundos debo mostrar la notificación.
 
     function notifyMe(notification) {
-        // Let's check if the browser supports notifications
         if (!("Notification" in window)) {
-            alert("This browser does not support system notifications");
+            alert("Tu navegador no soporta notificaciones...");
         }
 
-        // Let's check whether notification permissions have already been granted
         else if (Notification.permission === "granted") {
-            // If it's okay let's create a notification
             new Notification(notification);
             latestNotificationTime = new Date().getTime();
         }
-
-        // Otherwise, we need to ask the user for permission
         else if (Notification.permission !== 'denied') {
             Notification.requestPermission(function (permission) {
-                // If the user accepts, let's create a notification
                 if (permission === "granted") {
-                    var notification = new Notification("Hi there!");
+                    var notification = new Notification("¡Notificaciones activadas!");
                     latestNotificationTime = new Date().getTime();
                 }
             });
@@ -48,11 +42,20 @@
     /* Ejemplo: {'name':'BNB', 'price':0.0009495} */
     /* Además, deberás tener un valor visible de BTC/USDT en pantalla si quieres usar la calculadora, ya sea añadiendo la moneda a favoritos y teniendo este tab seleccionado, o seleccionando un tab que la contenga (los de la parte de arriba a la derecha).
     /*********************************************/
-    var coinPrices = [{'name':'LTC', 'price':0.016020},{'name':'BNB', 'price':0.00063196},{'name':'IOTA', 'price':0.00027079},{'name':'XLM', 'price':0.00005601},{'name':'TRX', 'price':0.00000330}];
+    var coinPrices = [
+        {'name':'EOS', 'price':0.00000000, 'cantidad':0 },
+        {'name':'FUN', 'price':0.00000000, 'cantidad':0 },
+        {'name':'XRP', 'price':0.00000000, 'cantidad':0 },
+        {'name':'XVG', 'price':0.00000000, 'cantidad':0 },
+        {'name':'BNB', 'price':0.00000000, 'cantidad':0 },
+        {'name':'IOTA', 'price':0.00000000, 'cantidad':0 },
+        {'name':'MANA', 'price':0.00000000, 'cantidad':0 },
+        {'name':'TRX', 'price':0.00000000, 'cantidad':0 }
+    ];
     //Cambia este valor si quieres que se refresque cada mas o menos tiempo. Tiempo actual, 3000 milisegundos (3 segundos).
     var refreshTime = 3000;
-    var lossAlert = -10;
-    var winAlert = 10;
+    var lossAlert = -10; //Porcentaje de perdida para mostrar notificación
+    var winAlert = 10; //Porcentaje de ganancia para mostrar notificación
     //Cambia este valor para actualizar el valor de 'Vender a:' al porcentaje que quieras.
     var sellTo = 10;
     /***************/
@@ -81,14 +84,14 @@
             $('body').keyup(function (e) {
                 if(e.keyCode === 67){
                     if(!$('#calc').is(':visible'))
-                        $('#calc').attr('style', 'display:block;  float: right;color: #ffd800;position: absolute; right: 0;top: 0; text-align: center;background-color: #909090;width: 250px;border: 1px dotted yellow;height: 75px;vertical-align: middle;margin-left: 44%;font-weight: bold;');
+                        $('#calc').attr('style', 'display:block;  float: right;color: #f3ba2f;position: absolute; right: 0;top: 0; text-align: center;background-color: #3b3b3b;width: 250px;border: 1px dotted #f3ba2f;height: 75px;vertical-align: middle;margin-left: 44%;font-weight: bold;');
                     else
                         $('#calc').attr('style', 'display:none');
                 }
 
                 if(e.keyCode === 78)
                     if(!$('#news').is(':visible'))
-                        $('#news').attr('style', 'float: left;color: #ffd800;position: absolute; left: 0;top: 0; text-align: left;background-color: #909090;width: 250px;border: 1px dotted yellow;height: auto;margin-top:10%; vertical-align: middle;margin-left: 0%;font-weight: bold;');
+                        $('#news').attr('style', 'float: left;color: #f3ba2f;position: absolute; left: 0;top: 0; text-align: left;background-color: #3b3b3b;width: 250px;border: 1px dotted #f3ba2f;height: auto;margin-top:10%; vertical-align: middle;margin-left: 0%;font-weight: bold;');
                     else
                         $('#news').attr('style', 'display:none');
             });
@@ -100,10 +103,8 @@
         }
     }, 1000);
 
-
-
     var init = function(){
-        $('body').append('<div style="float: right;color: #ffd800;position: absolute;top: 0;text-align: center;background-color: #909090;width: 250px;border: 1px dotted yellow;height: 75px;vertical-align: middle;margin-left: 44%;font-weight: bold;" id="mainDiv"></div>');
+        $('body').append('<div style=" border-radius: 0px 0px 20px 20px; float: right;color: #f3ba2f;position: absolute;top: 0;text-align: center;background-color: #3b3b3b;width: 250px;border-left: 1px solid #f3ba2f;border-right: 1px solid #f3ba2f;border-bottom: 1px solid #f3ba2f;height: 100px;vertical-align: middle;margin-left: 44%;font-weight: bold;" id="mainDiv"></div>');
         setInterval(function(){
             bitcoinValue = $($("li:contains('BTC/USDT')").parent()).find('li')[2];
             var currentPrice = $('.kline-para').find('strong')[0];
@@ -112,9 +113,10 @@
             var infoBuy = "Comprado a: ";
             var infoSell = "Vender a +"+sellTo+"% : ";
             var infoGanancia = "Ganancia: ";
+            var infoSatoshisActuales = 0;
             var break_ = false;
             var gananciaFloat = 0;
-
+            var bitcoinValue = $($("li:contains('BTC/USDT')").parent()).find('li')[2];
             $(coinPrices).each(function( i ) {
                 if($('.productSymbol').text().includes(coinPrices[i].name)) {
                     infoBuy += coinPrices[i].price;
@@ -122,25 +124,34 @@
                     infoSell += coinPrices[i].price + percent(coinPrices[i].price);
                     gananciaFloat = (((currentPrice*100)/coinPrices[i].price) -100).toFixed(2);
                     infoGanancia += gananciaFloat;
+                    var valorInicial = ((coinPrices[i].price * coinPrices[i].cantidad) * bitcoinValue.innerText.replace(',','')).toFixed(2);
+                    var gananciaTotal = ((currentPrice * coinPrices[i].cantidad) * bitcoinValue.innerText.replace(',','')).toFixed(2);
+                    if(valorInicial>gananciaTotal)
+                        gananciaTotal = "<span style='color:red'>" + "<img src='https://upload.wikimedia.org/wikipedia/commons/8/89/Red-animated-arrow-down.gif' width='10' />" + gananciaTotal +"</span>";
+                    else
+                        gananciaTotal = "<span style='color:green'>" + "<img src='https://s3.amazonaws.com/media-p.slid.es/uploads/429569/images/2121204/arrow_up.gif' width='10' />" + gananciaTotal +"</span>";
+                    infoSatoshisActuales = valorInicial + "$" + " <> " + gananciaTotal + "$";
                     break_ = true;
                 }
                 if(break_)
                     return false;
             });
+
+
             var spanName="<span>"+name+"</span><br/>";
             var span1="<span>"+infoBuy+"</span>";
             var span2="<span>"+infoSell+"</span>";
             var span3="<span>"+infoGanancia+"%</span>";
-            $('#mainDiv').html(spanName+span1+"<br/>"+span2+"<br/>"+span3);
+            var span4="<span>"+infoSatoshisActuales+"</span>";
+            $('#mainDiv').html(spanName+span1+"<br/>"+span2+"<br/>"+span3+"<br/>"+span4);
 
-            //notifyMe("It might be a good moment to sell: "+name+" Current profit: "+gananciaFloat);
             var currentTime = new Date().getTime();
 
             if(currentTime-notificationPeriod > latestNotificationTime){
                 if(gananciaFloat > winAlert){
-                    notifyMe("Sell Currency "+name+" Current profit: "+gananciaFloat+"%");
+                    notifyMe("¡Ojo! La moneda "+name+" lleva un beneficio de "+gananciaFloat+"%");
                 }else if(gananciaFloat < lossAlert){
-                    notifyMe("Alarm!! Currency "+name+" Is losing too much: "+gananciaFloat+"%");
+                    notifyMe("Cuidado!! La moneda "+name+" está perdiendo demasiado: "+gananciaFloat+"%");
                 }
             }
 
@@ -171,11 +182,7 @@
             .fail(function(response) {
             var newCoins = $(response.responseText).find('.article-list').text();
             $('body').append('<div id="news" style="float: left;color: #ffd800;position: absolute; left: 0;top: 0; text-align: left;background-color: #909090;width: 250px;border: 1px dotted yellow;height: auto;margin-top:10%; vertical-align: middle;margin-left: 0%;font-weight: bold;">'+ newCoins +'</div>');
-
-
-
         });
-
     };
 
     /**Helpers**/
@@ -190,6 +197,5 @@
         }
         $('.dollars').text( bitcoinValue.innerText.replace(',','') * usd);
     }
-
 
 })();
